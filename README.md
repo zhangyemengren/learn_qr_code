@@ -1,0 +1,1 @@
+# learn QR Code forked from https://github.com/kennytm/qrcode-rust
