@@ -119,6 +119,7 @@ pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
             .expect("invalid DATA_LENGTHS");
         if total_len <= data_capacity {
             let min_version = find_min_version(total_len, ec_level);
+            println!("min_version: {:?}", min_version);
             let mut bits = Bits::new(min_version);
             bits.reserve(total_len);
             bits.push_segments(data, opt_segments.into_iter())?;

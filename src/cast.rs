@@ -14,7 +14,6 @@ pub trait As {
     fn as_i16(self) -> i16;
     fn as_u32(self) -> u32;
     fn as_usize(self) -> usize;
-    fn as_isize(self) -> isize;
 }
 
 macro_rules! impl_as {
@@ -36,10 +35,6 @@ macro_rules! impl_as {
             fn as_usize(self) -> usize {
                 usize::try_from(self).unwrap()
             }
-
-            fn as_isize(self) -> isize {
-                isize::try_from(self).unwrap()
-            }
         }
 
         #[cfg(not(debug_assertions))]
@@ -55,9 +50,6 @@ macro_rules! impl_as {
             }
             fn as_usize(self) -> usize {
                 self as usize
-            }
-            fn as_isize(self) -> isize {
-                self as isize
             }
         }
     };

@@ -29,10 +29,6 @@ pub enum QrError {
     /// version.
     UnsupportedCharacterSet,
 
-    /// The provided ECI designator is invalid. A valid designator should be
-    /// between 0 and 999999.
-    InvalidEciDesignator,
-
     /// A character not belonging to the character set is found.
     InvalidCharacter,
 }

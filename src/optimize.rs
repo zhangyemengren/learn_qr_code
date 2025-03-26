@@ -272,9 +272,6 @@ impl<'a> Parser<'a> {
             pending_single_byte: false,
         }
     }
-    pub fn optimize(self, version: Version) -> Optimizer<Self> {
-        Optimizer::new(self, version)
-    }
 }
 
 impl<'a> Iterator for Parser<'a> {

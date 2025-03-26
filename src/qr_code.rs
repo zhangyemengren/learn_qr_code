@@ -13,7 +13,7 @@ pub struct QrCode {
 
 impl QrCode{
     pub fn new<D: AsRef<[u8]>>(data: D) -> QrResult<Self> {
-        Self::with_error_correction_level(data, EcLevel::L)
+        Self::with_error_correction_level(data, EcLevel::H)
     }
 
     pub fn with_error_correction_level<D: AsRef<[u8]>>(
