@@ -721,6 +721,22 @@ impl Canvas{
 
         self.draw_format_info_patterns(pattern);
     }
+    /**
+     * 绘制QR码中的所有功能图案
+     * 
+     * 该函数按顺序绘制以下功能图案：
+     * 1. 位置探测图案（Finder Patterns）：用于定位QR码的三个大正方形图案
+     * 2. 对齐图案（Alignment Patterns）：用于辅助定位的小正方形图案
+     * 3. 格式信息预留区域：用于存储纠错级别和掩码模式信息
+     * 4. 时序图案（Timing Patterns）：用于确定模块坐标的黑白交替图案
+     * 5. 版本信息图案：用于存储QR码版本信息的图案（仅版本7及以上需要）
+     * 
+     * 这些功能图案是QR码的重要组成部分，它们帮助扫描器：
+     * - 准确定位和识别QR码
+     * - 确定QR码的方向
+     * - 获取纠错级别和掩码模式
+     * - 计算模块坐标
+     */
     pub fn draw_all_functional_patterns(&mut self) {
         self.draw_finder_patterns();
         self.draw_alignment_patterns();

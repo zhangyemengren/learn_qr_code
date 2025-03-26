@@ -3,7 +3,8 @@ use std::cmp::max;
 use crate::cast::As;
 use crate::types::Color;
 
-pub mod string;
+// pub mod string;
+pub mod image;
 
 pub trait Canvas: Sized {
     type Pixel: Sized;
@@ -67,24 +68,6 @@ impl<'a, P: Pixel> Renderer<'a, P>{
             light_color: P::default_color(Color::Light),
             has_quiet_zone: true,
         }
-    }
-    pub fn dark_color(&mut self, color: P) -> &mut Self {
-        self.dark_color = color;
-        self
-    }
-
-    /// Sets color of a light module. Default is opaque white.
-    pub fn light_color(&mut self, color: P) -> &mut Self {
-        self.light_color = color;
-        self
-    }
-    pub fn quiet_zone(&mut self, has_quiet_zone: bool) -> &mut Self {
-        self.has_quiet_zone = has_quiet_zone;
-        self
-    }
-    pub fn module_dimensions(&mut self, width: u32, height: u32) -> &mut Self {
-        self.module_size = (max(width, 1), max(height, 1));
-        self
     }
 
     pub fn build(&self) -> P::Image {

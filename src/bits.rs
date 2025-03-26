@@ -95,10 +95,24 @@ fn find_min_version(length: usize, ec_level: EcLevel) -> Version {
     Version::Normal((base + 1).as_i16())
 }
 
+/**
+ * 自动编码输入数据为QR码位序列
+ * 
+ * 该函数接收原始数据和错误纠正级别，自动处理以下步骤：
+ * 1. 将输入数据解析为不同片段
+ * 2. 尝试不同QR码版本(9/26/40)找出适合的大小
+ * 3. 优化每个片段的编码方式
+ * 4. 计算总编码长度并与数据容量比较
+ * 5. 选择能存储数据的最小版本
+ * 6. 将优化后的片段编码为位序列并添加结束符
+ * 
+ * 如果数据过长无法编码，则返回错误
+ */
 pub fn encode_auto(data: &[u8], ec_level: EcLevel) -> QrResult<Bits> {
     let segments = Parser::new(data).collect::<Vec<Segment>>();
     for version in &[Version::Normal(9), Version::Normal(26), Version::Normal(40)] {
         let opt_segments = Optimizer::new(segments.iter().copied(), *version).collect::<Vec<_>>();
+        println!("opt_segments: {:?}", opt_segments);
         let total_len = total_encoded_len(&opt_segments, *version);
         let data_capacity = version
             .fetch(ec_level, &DATA_LENGTHS)
