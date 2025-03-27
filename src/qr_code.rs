@@ -13,7 +13,7 @@ pub struct QrCode {
 
 impl QrCode{
     pub fn new<D: AsRef<[u8]>>(data: D) -> QrResult<Self> {
-        Self::with_error_correction_level(data, EcLevel::H)
+        Self::with_error_correction_level(data, EcLevel::L)
     }
 
     pub fn with_error_correction_level<D: AsRef<[u8]>>(
@@ -56,7 +56,7 @@ impl QrCode{
         })
     }
     pub fn render<P: Pixel>(&self) -> Renderer<P> {
-        let quiet_zone = if self.version.is_micro() { 2 } else { 4 };
+        let quiet_zone = 4;
         Renderer::new(&self.content, self.width, quiet_zone)
     }
 }

@@ -55,14 +55,6 @@ pub enum Mode {
 impl Mode{
     pub fn length_bits_count(self, version: Version) -> usize {
         match version {
-            Version::Micro(a) => {
-                let a = a.as_usize();
-                match self {
-                    Self::Numeric => 2 + a,
-                    Self::Alphanumeric | Self::Byte => 1 + a,
-                    Self::Kanji => a,
-                }
-            }
             Version::Normal(1..=9) => match self {
                 Self::Numeric => 10,
                 Self::Alphanumeric => 9,
@@ -115,24 +107,16 @@ impl PartialOrd for Mode {
 pub enum Version {
     /// A normal QR code version. The parameter should be between 1 and 40.
     Normal(i16),
-
-    /// A Micro QR code version. The parameter should be between 1 and 4.
-    Micro(i16),
 }
 
 impl Version {
     pub const fn width(self) -> i16 {
         match self {
             Self::Normal(v) => v * 4 + 17,
-            Self::Micro(v) => v * 2 + 9,
         }
     }
     pub fn mode_bits_count(self) -> usize {
-        if let Self::Micro(a) = self {
-            (a - 1).as_usize()
-        } else {
-            4
-        }
+        4
     }
 
     pub fn fetch<T>(self, ec_level: EcLevel, table: &[[T; 4]]) -> QrResult<T>
@@ -143,18 +127,9 @@ impl Version {
             Self::Normal(v @ 1..=40) => {
                 return Ok(table[(v - 1).as_usize()][ec_level as usize]);
             }
-            Self::Micro(v @ 1..=4) => {
-                let obj = table[(v + 39).as_usize()][ec_level as usize];
-                if obj != T::default() {
-                    return Ok(obj);
-                }
-            }
             _ => {}
         }
         Err(QrError::InvalidVersion)
-    }
-    pub const fn is_micro(self) -> bool {
-        matches!(self, Self::Micro(_))
     }
 }
 

@@ -3,7 +3,7 @@ use crate::cast::{As, Truncate};
 use crate::optimize::{total_encoded_len, Optimizer, Parser, Segment};
 use crate::types::{EcLevel, Mode, QrError, QrResult, Version};
 
-static DATA_LENGTHS: [[usize; 4]; 44] = [
+static DATA_LENGTHS: [[usize; 4]; 40] = [
     // Normal versions
     [152, 128, 104, 72],
     [272, 224, 176, 128],
@@ -45,11 +45,6 @@ static DATA_LENGTHS: [[usize; 4]; 44] = [
     [21616, 16816, 12016, 9136],
     [22496, 17728, 12656, 9776],
     [23648, 18672, 13328, 10208],
-    // Micro versions
-    [20, 0, 0, 0],
-    [40, 32, 0, 0],
-    [84, 68, 0, 0],
-    [128, 112, 80, 0],
 ];
 
 #[inline]
@@ -172,11 +167,7 @@ impl Bits {
     }
 
     pub fn push_terminator(&mut self, ec_level: EcLevel) -> QrResult<()> {
-        let terminator_size = if let Version::Micro(a) = self.version {
-            a.as_usize() * 2 + 1
-        } else {
-            4
-        };
+        let terminator_size = 4;
 
         let cur_length = self.len();
         let data_length = self.max_len(ec_level)?;
@@ -260,11 +251,6 @@ impl Bits {
     pub fn push_mode_indicator(&mut self, mode: ExtendedMode) -> QrResult<()> {
         #[allow(clippy::match_same_arms)]
         let number = match (self.version, mode) {
-            (Version::Micro(1), ExtendedMode::Data(Mode::Numeric)) => return Ok(()),
-            (Version::Micro(_), ExtendedMode::Data(Mode::Numeric)) => 0,
-            (Version::Micro(_), ExtendedMode::Data(Mode::Alphanumeric)) => 1,
-            (Version::Micro(_), ExtendedMode::Data(Mode::Byte)) => 0b10,
-            (Version::Micro(_), ExtendedMode::Data(Mode::Kanji)) => 0b11,
             (_, ExtendedMode::Data(Mode::Numeric)) => 0b0001,
             (_, ExtendedMode::Data(Mode::Alphanumeric)) => 0b0010,
             (_, ExtendedMode::Data(Mode::Byte)) => 0b0100,

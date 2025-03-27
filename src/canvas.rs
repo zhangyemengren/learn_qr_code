@@ -15,40 +15,11 @@ static ALL_PATTERNS_QR: [MaskPattern; 8] = [
     MaskPattern::Meadow,
 ];
 
-static ALL_PATTERNS_MICRO_QR: [MaskPattern; 4] = [
-    MaskPattern::HorizontalLines,
-    MaskPattern::LargeCheckerboard,
-    MaskPattern::Diamonds,
-    MaskPattern::Meadow,
-];
 
 static FORMAT_INFOS_QR: [u16; 32] = [
     0x5412, 0x5125, 0x5e7c, 0x5b4b, 0x45f9, 0x40ce, 0x4f97, 0x4aa0, 0x77c4, 0x72f3, 0x7daa, 0x789d,
     0x662f, 0x6318, 0x6c41, 0x6976, 0x1689, 0x13be, 0x1ce7, 0x19d0, 0x0762, 0x0255, 0x0d0c, 0x083b,
     0x355f, 0x3068, 0x3f31, 0x3a06, 0x24b4, 0x2183, 0x2eda, 0x2bed,
-];
-
-static FORMAT_INFOS_MICRO_QR: [u16; 32] = [
-    0x4445, 0x4172, 0x4e2b, 0x4b1c, 0x55ae, 0x5099, 0x5fc0, 0x5af7, 0x6793, 0x62a4, 0x6dfd, 0x68ca,
-    0x7678, 0x734f, 0x7c16, 0x7921, 0x06de, 0x03e9, 0x0cb0, 0x0987, 0x1735, 0x1202, 0x1d5b, 0x186c,
-    0x2508, 0x203f, 0x2f66, 0x2a51, 0x34e3, 0x31d4, 0x3e8d, 0x3bba,
-];
-static FORMAT_INFO_COORDS_MICRO_QR: [(i16, i16); 15] = [
-    (1, 8),
-    (2, 8),
-    (3, 8),
-    (4, 8),
-    (5, 8),
-    (6, 8),
-    (7, 8),
-    (8, 8),
-    (8, 7),
-    (8, 6),
-    (8, 5),
-    (8, 4),
-    (8, 3),
-    (8, 2),
-    (8, 1),
 ];
 
 static FORMAT_INFO_COORDS_QR_MAIN: [(i16, i16); 15] = [
@@ -228,7 +199,6 @@ impl DataModuleIter{
             y: width - 1,
             width,
             timing_pattern_column: match version {
-                Version::Micro(_) => 0,
                 Version::Normal(_) => 6,
             },
         }
@@ -490,21 +460,11 @@ impl Canvas{
                 let s4 = self.compute_balance_penalty_score();
                 s1_a + s1_b + s2 + s3_a + s3_b + s4
             }
-            Version::Micro(_) => self.compute_light_side_penalty_score(),
         }
     }
     fn draw_format_info_patterns_with_number(&mut self, format_info: u16) {
         let format_info = u32::from(format_info);
         match self.version {
-            Version::Micro(_) => {
-                self.draw_number(
-                    format_info,
-                    15,
-                    Color::Dark,
-                    Color::Light,
-                    &FORMAT_INFO_COORDS_MICRO_QR,
-                );
-            }
             Version::Normal(_) => {
                 self.draw_number(
                     format_info,
@@ -529,28 +489,6 @@ impl Canvas{
             Version::Normal(_) => {
                 let simple_format_number = ((self.ec_level as usize) ^ 1) << 3 | (pattern as usize);
                 FORMAT_INFOS_QR[simple_format_number]
-            }
-            Version::Micro(a) => {
-                let micro_pattern_number = match pattern {
-                    MaskPattern::HorizontalLines => 0b00,
-                    MaskPattern::LargeCheckerboard => 0b01,
-                    MaskPattern::Diamonds => 0b10,
-                    MaskPattern::Meadow => 0b11,
-                    _ => panic!("Unsupported mask pattern in Micro QR code"),
-                };
-                let symbol_number = match (a, self.ec_level) {
-                    (1, EcLevel::L) => 0b000,
-                    (2, EcLevel::L) => 0b001,
-                    (2, EcLevel::M) => 0b010,
-                    (3, EcLevel::L) => 0b011,
-                    (3, EcLevel::M) => 0b100,
-                    (4, EcLevel::L) => 0b101,
-                    (4, EcLevel::M) => 0b110,
-                    (4, EcLevel::Q) => 0b111,
-                    _ => panic!("Unsupported version/ec_level combination in Micro QR code"),
-                };
-                let simple_format_number = symbol_number << 2 | micro_pattern_number;
-                FORMAT_INFOS_MICRO_QR[simple_format_number]
             }
         };
         self.draw_format_info_patterns_with_number(format_number);
@@ -588,7 +526,6 @@ impl Canvas{
     fn draw_timing_patterns(&mut self) {
         let width = self.width;
         let (y, x1, x2) = match self.version {
-            Version::Micro(_) => (0, 8, width - 1),
             Version::Normal(_) => (6, 8, width - 9),
         };
         self.draw_line(x1, y, x2, y, Color::Dark, Color::Light);
@@ -596,7 +533,7 @@ impl Canvas{
     }
     fn draw_alignment_patterns(&mut self) {
         match self.version {
-            Version::Micro(_) | Version::Normal(1) => {}
+            Version::Normal(1) => {}
             Version::Normal(2..=6) => self.draw_alignment_pattern_at(-7, -7),
             Version::Normal(a) => {
                 let positions = ALIGNMENT_PATTERN_POSITIONS[(a - 7).as_usize()];
@@ -608,6 +545,30 @@ impl Canvas{
             }
         }
     }
+    /**
+     * 在指定坐标处绘制一个位置探测图案
+     * 
+     * 位置探测图案是QR码中最基本的功能图案，呈现为7×7的方块图案，包含三个嵌套的正方形：
+     * - 外层：7×7的黑色正方形边框
+     * - 中层：5×5的白色正方形
+     * - 内层：3×3的黑色正方形
+     * 
+     * 该函数处理绘制的核心逻辑：
+     * 1. 根据坐标的正负调整绘制范围，确保图案正确绘制在QR码边缘
+     * 2. 使用嵌套循环绘制整个7×7区域
+     * 3. 根据相对位置确定每个模块的颜色：
+     *    - 最外层(i,j为±4)：白色
+     *    - 次外层(i,j为±3)：黑色
+     *    - 中间层(i,j为±2)：白色
+     *    - 内部(其余)：黑色
+     * 
+     * 参数:
+     * - x: 位置探测图案中心的x坐标
+     * - y: 位置探测图案中心的y坐标
+     * 
+     * 注意：坐标可以是负数，函数内部会对负坐标进行特殊处理，
+     * 这对于在QR码右下角和右上角绘制位置探测图案很重要
+     */
     fn draw_finder_pattern_at(&mut self, x: i16, y: i16) {
         let (dx_left, dx_right) = if x >= 0 { (-3, 4) } else { (-4, 3) };
         let (dy_top, dy_bottom) = if y >= 0 { (-3, 4) } else { (-4, 3) };
@@ -648,7 +609,6 @@ impl Canvas{
         self.draw_finder_pattern_at(3, 3);
 
         match self.version {
-            Version::Micro(_) => {}
             Version::Normal(_) => {
                 self.draw_finder_pattern_at(-4, 3);
                 self.draw_finder_pattern_at(3, -4);
@@ -668,7 +628,7 @@ impl Canvas{
     }
     fn draw_version_info_patterns(&mut self) {
         match self.version {
-            Version::Micro(_) | Version::Normal(1..=6) => {}
+            Version::Normal(1..=6) => {}
             Version::Normal(a) => {
                 let version_info = VERSION_INFOS[(a - 7).as_usize()];
                 self.draw_number(
@@ -762,18 +722,13 @@ impl Canvas{
         self.draw_version_info_patterns();
     }
     pub fn draw_data(&mut self, data: &[u8], ec: &[u8]) {
-        let is_half_codeword_at_end = matches!(
-            (self.version, self.ec_level),
-            (Version::Micro(1), EcLevel::L) | (Version::Micro(3), EcLevel::M)
-        );
         let mut coords = DataModuleIter::new(self.version);
-        self.draw_codewords(data, is_half_codeword_at_end, &mut coords);
+        self.draw_codewords(data, false, &mut coords);
         self.draw_codewords(ec, false, &mut coords);
     }
     pub fn apply_best_mask(&self) -> Self {
         match self.version {
             Version::Normal(_) => ALL_PATTERNS_QR.iter(),
-            Version::Micro(_) => ALL_PATTERNS_MICRO_QR.iter(),
         }
             .map(|ptn| {
                 let mut c = self.clone();
